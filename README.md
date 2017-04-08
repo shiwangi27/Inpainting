@@ -1,16 +1,9 @@
-# Inpainting
-## Implementation of "Context Encoders: Feature Learning by Inpainting" [[PDF](http://www.cs.berkeley.edu/~pathak/papers/cvpr16.pdf)]
+# Project 3: Inpainting
+* CS 523: Multimedia Systems - Generative models for creative intelligence
+* Spring 2017
 
-* Results on Paris Streetview Dataset
+* This work is further extension of "Context Encoders: Feature Learning by Inpainting" by [Pathak et. al](http://www.cs.berkeley.edu/~pathak/papers/cvpr16.pdf). 
+* We will be starting with the Tensorflow implementation by [T. Kim](https://github.com/jazzsaxmafia/Inpainting). 
 
-![alt tag](https://github.com/jazzsaxmafia/Impainting/blob/master/show/img_1.ori.jpg) ![alt tag](https://github.com/jazzsaxmafia/Impainting/blob/master/show/img_1.jpg)
-
-![alt tag](https://github.com/jazzsaxmafia/Impainting/blob/master/show/img_2.ori.jpg) ![alt tag](https://github.com/jazzsaxmafia/Impainting/blob/master/show/img_2.jpg)
-
-![alt tag](https://github.com/jazzsaxmafia/Impainting/blob/master/show/img_3.ori.jpg) ![alt tag](https://github.com/jazzsaxmafia/Impainting/blob/master/show/img_3.jpg)
-
-![alt tag](https://github.com/jazzsaxmafia/Impainting/blob/master/show/img_4.ori.jpg) ![alt tag](https://github.com/jazzsaxmafia/Impainting/blob/master/show/img_4.jpg)
-
-![alt tag](https://github.com/jazzsaxmafia/Impainting/blob/master/show/img_5.ori.jpg) ![alt tag](https://github.com/jazzsaxmafia/Impainting/blob/master/show/img_5.jpg)
-
-![alt tag](https://github.com/jazzsaxmafia/Impainting/blob/master/show/img_6.ori.jpg) ![alt tag](https://github.com/jazzsaxmafia/Impainting/blob/master/show/img_6.jpg)
+# Paper Summary
+* [Summary](https://docs.google.com/document/d/1_Mgj8AkLhQoViIsmhQylNKxNK9b3OeZDRMaLNRsCP3w/edit?usp=sharing) of the original Context Encoders paper. 
