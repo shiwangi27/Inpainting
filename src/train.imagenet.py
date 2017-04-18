@@ -20,7 +20,7 @@ hiding_size = 64
 
 trainset_path = '../data/imagenet_trainset.pickle'
 testset_path  = '../data/imagenet_testset.pickle'
-dataset_path = '/media/storage3/Study/data/imagenet/'
+dataset_path = '../data/train2014/'
 model_path = '../models/imagenet/'
 result_path= '../results/imagenet/'
 pretrained_model_path = '../models/imagenet/model-0'
@@ -54,7 +54,7 @@ is_train = tf.placeholder( tf.bool )
 learning_rate = tf.placeholder( tf.float32, [])
 images_tf = tf.placeholder( tf.float32, [batch_size, 128, 128, 3], name="images")
 
-labels_D = tf.concat( 0, [tf.ones([batch_size]), tf.zeros([batch_size])] )
+labels_D = tf.concat( [tf.ones([batch_size]), tf.zeros([batch_size])], 0)
 labels_G = tf.ones([batch_size])
 images_hiding = tf.placeholder( tf.float32, [batch_size, hiding_size, hiding_size, 3], name='images_hiding')
 
@@ -63,12 +63,12 @@ model = Model()
 bn1, bn2, bn3, bn4, bn5, bn6, debn4, debn3, debn2, debn1, reconstruction_ori, reconstruction = model.build_reconstruction(images_tf, is_train)
 adversarial_pos = model.build_adversarial(images_hiding, is_train)
 adversarial_neg = model.build_adversarial(reconstruction, is_train, reuse=True)
-adversarial_all = tf.concat(0, [adversarial_pos, adversarial_neg])
+adversarial_all = tf.concat([adversarial_pos, adversarial_neg], 0)
 
 # Applying bigger loss for overlapping region
 mask_recon = tf.pad(tf.ones([hiding_size - 2*overlap_size, hiding_size - 2*overlap_size]), [[overlap_size,overlap_size], [overlap_size,overlap_size]])
 mask_recon = tf.reshape(mask_recon, [hiding_size, hiding_size, 1])
-mask_recon = tf.concat(2, [mask_recon]*3)
+mask_recon = tf.concat([mask_recon]*3, 2)
 mask_overlap = 1 - mask_recon
 
 loss_recon_ori = tf.square( images_hiding - reconstruction )
@@ -76,8 +76,8 @@ loss_recon_center = tf.reduce_mean(tf.sqrt( 1e-5 + tf.reduce_sum(loss_recon_ori 
 loss_recon_overlap = tf.reduce_mean(tf.sqrt( 1e-5 + tf.reduce_sum(loss_recon_ori * mask_overlap, [1,2,3]))) # Loss for overlapping region
 loss_recon = loss_recon_center + loss_recon_overlap
 
-loss_adv_D = tf.reduce_mean( tf.nn.sigmoid_cross_entropy_with_logits(adversarial_all, labels_D))
-loss_adv_G = tf.reduce_mean( tf.nn.sigmoid_cross_entropy_with_logits(adversarial_neg, labels_G))
+loss_adv_D = tf.reduce_mean( tf.nn.sigmoid_cross_entropy_with_logits(logits=adversarial_all, labels=labels_D))
+loss_adv_G = tf.reduce_mean( tf.nn.sigmoid_cross_entropy_with_logits(logits=adversarial_neg, labels=labels_G))
 
 loss_G = loss_adv_G * lambda_adv + loss_recon * lambda_recon
 loss_D = loss_adv_D * lambda_adv
@@ -88,8 +88,8 @@ var_D = filter( lambda x: x.name.startswith('DIS'), tf.trainable_variables())
 W_G = filter(lambda x: x.name.endswith('W:0'), var_G)
 W_D = filter(lambda x: x.name.endswith('W:0'), var_D)
 
-loss_G += weight_decay_rate * tf.reduce_mean(tf.pack( map(lambda x: tf.nn.l2_loss(x), W_G)))
-loss_D += weight_decay_rate * tf.reduce_mean(tf.pack( map(lambda x: tf.nn.l2_loss(x), W_D)))
+loss_G += weight_decay_rate * tf.reduce_mean(tf.stack( map(lambda x: tf.nn.l2_loss(x), W_G)))
+loss_D += weight_decay_rate * tf.reduce_mean(tf.stack( map(lambda x: tf.nn.l2_loss(x), W_D)))
 
 sess = tf.InteractiveSession()
 

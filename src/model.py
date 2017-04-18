@@ -136,13 +136,17 @@ class Model():
     def build_adversarial(self, images, is_train, reuse=None):
         with tf.variable_scope('DIS', reuse=reuse):
             conv1 = self.new_conv_layer(images, [4,4,3,64], stride=2, name="conv1" )
-            bn1 = self.leaky_relu(self.batchnorm(conv1, is_train, name='bn1'))
+            #bn1 = self.leaky_relu(self.batchnorm(conv1, is_train, name='bn1'))
+            bn1 = self.leaky_relu(tf.contrib.layers.batch_norm(conv1, is_training=is_train))
             conv2 = self.new_conv_layer(bn1, [4,4,64,128], stride=2, name="conv2")
-            bn2 = self.leaky_relu(self.batchnorm(conv2, is_train, name='bn2'))
+            #bn2 = self.leaky_relu(self.batchnorm(conv2, is_train, name='bn2'))
+            bn2 = self.leaky_relu(tf.contrib.layers.batch_norm(conv2, is_training=is_train))
             conv3 = self.new_conv_layer(bn2, [4,4,128,256], stride=2, name="conv3")
-            bn3 = self.leaky_relu(self.batchnorm(conv3, is_train, name='bn3'))
+            #bn3 = self.leaky_relu(self.batchnorm(conv3, is_train, name='bn3'))
+            bn3 = self.leaky_relu(tf.contrib.layers.batch_norm(conv3, is_training=is_train))
             conv4 = self.new_conv_layer(bn3, [4,4,256,512], stride=2, name="conv4")
-            bn4 = self.leaky_relu(self.batchnorm(conv4, is_train, name='bn4'))
+            #bn4 = self.leaky_relu(self.batchnorm(conv4, is_train, name='bn4'))
+            bn4 = self.leaky_relu(tf.contrib.layers.batch_norm(conv4, is_training=is_train))
 
             output = self.new_fc_layer( bn4, output_size=1, name='output')
 
