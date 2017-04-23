@@ -8,7 +8,8 @@ from model import *
 from util import *
 
 # n_epochs = 10000
-n_epochs = 10
+n_epochs = 100
+# n_epochs = 10
 learning_rate_val = 0.0003
 weight_decay_rate =  0.00001
 momentum = 0.9
@@ -126,7 +127,9 @@ loss_D += weight_decay_rate * tf.reduce_mean(tf.pack( map(lambda x: tf.nn.l2_los
 print 'loss_G:', loss_G
 print 'loss_D:', loss_D
 
-sess = tf.InteractiveSession()
+gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.3)
+
+sess = tf.InteractiveSession(config=tf.ConfigProto(gpu_options=gpu_options))
 
 optimizer_G = tf.train.AdamOptimizer( learning_rate=learning_rate )
 
