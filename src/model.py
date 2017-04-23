@@ -5,6 +5,7 @@ import cPickle
 import ipdb
 class Model():
     def __init__(self):
+        print 'creating empty model; constructor does nothing'
         pass
 
     def new_conv_layer( self, bottom, filter_shape, activation=tf.identity, padding='SAME', stride=1, name=None ):
@@ -78,23 +79,33 @@ class Model():
         return tf.maximum(leak*bottom, bottom)
 
     def batchnorm(self, bottom, is_train, epsilon=1e-8, name=None):
+        #print '-------- in batchnorm'
         bottom = tf.clip_by_value( bottom, -100., 100.)
+        #print 'bottom:', bottom
         depth = bottom.get_shape().as_list()[-1]
+        #print 'depth:', depth
 
         with tf.variable_scope(name):
 
             gamma = tf.get_variable("gamma", [depth], initializer=tf.constant_initializer(1.))
             beta  = tf.get_variable("beta" , [depth], initializer=tf.constant_initializer(0.))
 
+            #print 'gamma:', gamma
+            #print 'beta:', beta
+
             batch_mean, batch_var = tf.nn.moments(bottom, [0,1,2], name='moments')
+            #print 'batch_mean:', batch_mean
+            #print 'batch_var:', batch_var
             ema = tf.train.ExponentialMovingAverage(decay=0.5)
 
+            #print 'ema:', ema
 
             def update():
                 with tf.control_dependencies([ema_apply_op]):
                     return tf.identity(batch_mean), tf.identity(batch_var)
 
-            ema_apply_op = ema.apply([batch_mean, batch_var])
+            with tf.variable_scope(tf.get_variable_scope(), reuse=False):
+                ema_apply_op = ema.apply([batch_mean, batch_var])
             ema_mean, ema_var = ema.average(batch_mean), ema.average(batch_var)
             mean, var = tf.cond(
                     is_train,
@@ -102,24 +113,40 @@ class Model():
                     lambda: (ema_mean, ema_var) )
 
             normed = tf.nn.batch_norm_with_global_normalization(bottom, mean, var, beta, gamma, epsilon, False)
+        #print '-------- out batchnorm'
         return normed
 
     def build_reconstruction( self, images, is_train ):
+        print '---- in build_reconstruction'
         batch_size = images.get_shape().as_list()[0]
+
+        print 'batch_size:', batch_size
 
         with tf.variable_scope('GEN'):
             conv1 = self.new_conv_layer(images, [4,4,3,64], stride=2, name="conv1" )
+            print 'conv1:', conv1
             bn1 = self.leaky_relu(self.batchnorm(conv1, is_train, name='bn1'))
+            print 'bn1:', bn1
             conv2 = self.new_conv_layer(bn1, [4,4,64,64], stride=2, name="conv2" )
+            print 'conv2:', conv2
             bn2 = self.leaky_relu(self.batchnorm(conv2, is_train, name='bn2'))
+            print 'bn2:', bn2
             conv3 = self.new_conv_layer(bn2, [4,4,64,128], stride=2, name="conv3")
+            print 'conv3:', conv3
             bn3 = self.leaky_relu(self.batchnorm(conv3, is_train, name='bn3'))
+            print 'bn3:', bn3
             conv4 = self.new_conv_layer(bn3, [4,4,128,256], stride=2, name="conv4")
+            print 'conv4:', conv4
             bn4 = self.leaky_relu(self.batchnorm(conv4, is_train, name='bn4'))
+            print 'bn4:', bn4
             conv5 = self.new_conv_layer(bn4, [4,4,256,512], stride=2, name="conv5")
+            print 'conv5:', conv5
             bn5 = self.leaky_relu(self.batchnorm(conv5, is_train, name='bn5'))
+            print 'bn5:', bn5
             conv6 = self.new_conv_layer(bn5, [4,4,512,4000], stride=2, padding='VALID', name='conv6')
+            print 'conv6:', conv6
             bn6 = self.leaky_relu(self.batchnorm(conv6, is_train, name='bn6'))
+            print 'bn6:', bn6
 
             deconv4 = self.new_deconv_layer( bn6, [4,4,512,4000], conv5.get_shape().as_list(), padding='VALID', stride=2, name="deconv4")
             debn4 = tf.nn.relu(self.batchnorm(deconv4, is_train, name='debn4'))
@@ -131,22 +158,24 @@ class Model():
             debn1 = tf.nn.relu(self.batchnorm(deconv1, is_train, name='debn1'))
             recon = self.new_deconv_layer( debn1, [4,4,3,64], [batch_size,64,64,3], stride=2, name="recon")
 
+        print '---- out build_reconstruction'
+
         return bn1, bn2, bn3, bn4, bn5, bn6, debn4, debn3, debn2, debn1, recon, tf.nn.tanh(recon)
 
     def build_adversarial(self, images, is_train, reuse=None):
         with tf.variable_scope('DIS', reuse=reuse):
             conv1 = self.new_conv_layer(images, [4,4,3,64], stride=2, name="conv1" )
-            #bn1 = self.leaky_relu(self.batchnorm(conv1, is_train, name='bn1'))
-            bn1 = self.leaky_relu(tf.contrib.layers.batch_norm(conv1, is_training=is_train))
+            bn1 = self.leaky_relu(self.batchnorm(conv1, is_train, name='bn1'))
+            #bn1 = self.leaky_relu(tf.contrib.layers.batch_norm(conv1, is_training=is_train))
             conv2 = self.new_conv_layer(bn1, [4,4,64,128], stride=2, name="conv2")
-            #bn2 = self.leaky_relu(self.batchnorm(conv2, is_train, name='bn2'))
-            bn2 = self.leaky_relu(tf.contrib.layers.batch_norm(conv2, is_training=is_train))
+            bn2 = self.leaky_relu(self.batchnorm(conv2, is_train, name='bn2'))
+            #bn2 = self.leaky_relu(tf.contrib.layers.batch_norm(conv2, is_training=is_train))
             conv3 = self.new_conv_layer(bn2, [4,4,128,256], stride=2, name="conv3")
-            #bn3 = self.leaky_relu(self.batchnorm(conv3, is_train, name='bn3'))
-            bn3 = self.leaky_relu(tf.contrib.layers.batch_norm(conv3, is_training=is_train))
+            bn3 = self.leaky_relu(self.batchnorm(conv3, is_train, name='bn3'))
+            #bn3 = self.leaky_relu(tf.contrib.layers.batch_norm(conv3, is_training=is_train))
             conv4 = self.new_conv_layer(bn3, [4,4,256,512], stride=2, name="conv4")
-            #bn4 = self.leaky_relu(self.batchnorm(conv4, is_train, name='bn4'))
-            bn4 = self.leaky_relu(tf.contrib.layers.batch_norm(conv4, is_training=is_train))
+            bn4 = self.leaky_relu(self.batchnorm(conv4, is_train, name='bn4'))
+            #bn4 = self.leaky_relu(tf.contrib.layers.batch_norm(conv4, is_training=is_train))
 
             output = self.new_fc_layer( bn4, output_size=1, name='output')
 
