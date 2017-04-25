@@ -2,4 +2,3 @@ models/
 data/
 results/
 results.original/
-*.pyc

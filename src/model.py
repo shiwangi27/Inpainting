@@ -117,10 +117,10 @@ class Model():
         return normed
 
     def build_reconstruction( self, images, is_train ):
-        print '---- in build_reconstruction'
+        # print '---- in build_reconstruction'
         batch_size = images.get_shape().as_list()[0]
 
-        print 'batch_size:', batch_size
+        # print 'batch_size:', batch_size
 
         with tf.variable_scope('GEN'):
             conv1 = self.new_conv_layer(images, [4,4,3,64], stride=2, name="conv1" )
@@ -158,7 +158,7 @@ class Model():
             debn1 = tf.nn.relu(self.batchnorm(deconv1, is_train, name='debn1'))
             recon = self.new_deconv_layer( debn1, [4,4,3,64], [batch_size,64,64,3], stride=2, name="recon")
 
-        print '---- out build_reconstruction'
+        # print '---- out build_reconstruction'
 
         return bn1, bn2, bn3, bn4, bn5, bn6, debn4, debn3, debn2, debn1, recon, tf.nn.tanh(recon)
 

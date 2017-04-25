@@ -7,25 +7,25 @@ import cv2
 from model import *
 from util import *
 
-# n_epochs = 10000
-n_epochs = 100
+n_epochs = 10000
+# n_epochs = 100
 # n_epochs = 10
 learning_rate_val = 0.0003
 weight_decay_rate =  0.00001
 momentum = 0.9
-batch_size = 500
+batch_size = 256
 lambda_recon = 0.9
 lambda_adv = 0.1
 
-overlap_size = 7
-hiding_size = 64
+border_size = 7
+giving_size = 64
 
-trainset_path = '../data/imagenet_trainset.pickle'
-testset_path  = '../data/imagenet_testset.pickle'
+trainset_path = '../data/imagenet_out_trainset.pickle'
+testset_path  = '../data/imagenet_out_testset.pickle'
 dataset_path = '../data/train2014'
-model_path = '../models/imagenet/'
-result_path= '../results/imagenet/'
-pretrained_model_path = '../models/imagenet/model-0'
+model_path = '../models/imagenet_out/'
+result_path= '../results/imagenet_out/'
+pretrained_model_path = '../models/imagenet_out/model-0'
 
 if not os.path.exists(model_path):
     os.makedirs( model_path )
@@ -50,7 +50,7 @@ else:
     testset = pd.read_pickle( testset_path )
 
 testset.index = range(len(testset))
-print 'len(testset):', len(testset)
+# print 'len(testset):', len(testset)
 testset = testset.ix[np.random.permutation(len(testset))]
 is_train = tf.placeholder( tf.bool )
 
@@ -65,35 +65,27 @@ print 'labels_D:', labels_D
 # print labels_D[999]
 labels_G = tf.ones([batch_size])
 print 'labels_G:', labels_G
-images_hiding = tf.placeholder( tf.float32, [batch_size, hiding_size, hiding_size, 3], name='images_hiding')
-print 'images_hiding:', images_hiding
+images_giving = tf.placeholder( tf.float32, [batch_size, giving_size, giving_size, 3], name='images_giving')
+print 'imags_giving:', images_giving
 
 model = Model()
 
 bn1, bn2, bn3, bn4, bn5, bn6, debn4, debn3, debn2, debn1, reconstruction_ori, reconstruction = model.build_reconstruction(images_tf, is_train)
 print 'reconstruction:', reconstruction
-adversarial_pos = model.build_adversarial(images_hiding, is_train)
+adversarial_pos = model.build_adversarial(images_giving, is_train)
 adversarial_neg = model.build_adversarial(reconstruction, is_train, reuse=True)
 adversarial_all = tf.concat(0, [adversarial_pos, adversarial_neg])
 
-#print 'adversarial_pos:', adversarial_pos
-#print 'adversarial_neg:', adversarial_neg
-#print 'adversarial_all:', adversarial_all
-
 # Applying bigger loss for overlapping region
-mask_recon = tf.pad(tf.ones([hiding_size - 2*overlap_size, hiding_size - 2*overlap_size]), [[overlap_size,overlap_size], [overlap_size,overlap_size]])
-#print 'mask_recon:', mask_recon
-mask_recon = tf.reshape(mask_recon, [hiding_size, hiding_size, 1])
-#print 'mask_recon:', mask_recon
-mask_recon = tf.concat(2, [mask_recon]*3)
-print 'mask_recon:', mask_recon
-mask_overlap = 1 - mask_recon
-print 'mask_overlap:', mask_overlap
+mask_overlap = tf.pad(tf.ones([giving_size - 2*border_size, giving_size - 2*border_size]), [[border_size,border_size], [border_size,border_size]])
+mask_overlap = tf.reshape(mask_overlap, [giving_size, giving_size, 1])
+mask_overlap = tf.concat(2, [mask_overlap]*3)
+mask_border = 1 - mask_overlap
 
-loss_recon_ori = tf.square( images_hiding - reconstruction )
-loss_recon_center = tf.reduce_mean(tf.sqrt( 1e-5 + tf.reduce_sum(loss_recon_ori * mask_recon, [1,2,3]))) / 10.  # Loss for non-overlapping region
+loss_recon_ori = tf.square( images_giving - reconstruction )
+loss_recon_border = tf.reduce_mean(tf.sqrt( 1e-5 + tf.reduce_sum(loss_recon_ori * mask_border, [1,2,3]))) / 10.  # Loss for non-overlapping region
 loss_recon_overlap = tf.reduce_mean(tf.sqrt( 1e-5 + tf.reduce_sum(loss_recon_ori * mask_overlap, [1,2,3]))) # Loss for overlapping region
-loss_recon = loss_recon_center + loss_recon_overlap
+loss_recon = loss_recon_border + loss_recon_overlap
 
 loss_adv_D = tf.reduce_mean( tf.nn.sigmoid_cross_entropy_with_logits(adversarial_all, labels_D))
 loss_adv_G = tf.reduce_mean( tf.nn.sigmoid_cross_entropy_with_logits(adversarial_neg, labels_G))
@@ -114,46 +106,46 @@ for d in var_D:
 W_G = filter(lambda x: x.name.endswith('W:0'), var_G)
 W_D = filter(lambda x: x.name.endswith('W:0'), var_D)
 
-print 'W_G:', W_G
-for g in W_G:
-    print g.name
-print 'W_D:', W_D
-for d in W_D:
-    print d.name
+# print 'W_G:', W_G
+# for g in W_G:
+#     print g.name
+# print 'W_D:', W_D
+# for d in W_D:
+#     print d.name
 
 loss_G += weight_decay_rate * tf.reduce_mean(tf.pack( map(lambda x: tf.nn.l2_loss(x), W_G)))
 loss_D += weight_decay_rate * tf.reduce_mean(tf.pack( map(lambda x: tf.nn.l2_loss(x), W_D)))
 
-print 'loss_G:', loss_G
-print 'loss_D:', loss_D
+# print 'loss_G:', loss_G
+# print 'loss_D:', loss_D
 
-gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.3)
+gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.45)
 
 sess = tf.InteractiveSession(config=tf.ConfigProto(gpu_options=gpu_options))
 
 optimizer_G = tf.train.AdamOptimizer( learning_rate=learning_rate )
 
-print 'optimizer_G:', optimizer_G
+# print 'optimizer_G:', optimizer_G
 
 grads_vars_G = optimizer_G.compute_gradients( loss_G, var_list=var_G )
 # for x in xrange(len(grads_vars_G)):
-#    print x, ':', grads_vars_G[x][0], grads_vars_G[x][1].name
-print type(grads_vars_G[0])
-print type(grads_vars_G[2])
-#grads_vars_G = map(lambda gv: [tf.clip_by_value(gv[0], -10., 10.), gv[1]], grads_vars_G)
+#     print x, ':', grads_vars_G[x][0], grads_vars_G[x][1].name
+# print type(grads_vars_G[0])
+# print type(grads_vars_G[2])
+# grads_vars_G = map(lambda gv: [tf.clip_by_value(gv[0], -10., 10.), gv[1]], grads_vars_G)
 for gv in grads_vars_G:
     if gv[0] is not None:
         gv = [tf.clip_by_value(gv[0], -10., 10.), gv[1]]
 # print ''
 # for x in xrange(len(grads_vars_G)):
 #     print x, ':', grads_vars_G[x][0], grads_vars_G[x][1].name
-print type(grads_vars_G[0])
-print type(grads_vars_G[2])
+# print type(grads_vars_G[0])
+# print type(grads_vars_G[2])
 train_op_G = optimizer_G.apply_gradients( grads_vars_G )
 
 optimizer_D = tf.train.AdamOptimizer( learning_rate=learning_rate )
 grads_vars_D = optimizer_D.compute_gradients( loss_D, var_list=var_D )
-#grads_vars_D = map(lambda gv: [tf.clip_by_value(gv[0], -10., 10.), gv[1]], grads_vars_D)
+# grads_vars_D = map(lambda gv: [tf.clip_by_value(gv[0], -10., 10.), gv[1]], grads_vars_D)
 for gv in grads_vars_D:
     if gv[0] is not None:
         gv = [tf.clip_by_value(gv[0], -10., 10.), gv[1]]
@@ -185,6 +177,7 @@ for epoch in range(n_epochs):
         if is_none > 0: continue
 
         images_crops = map(lambda x: crop_random(x), images_ori)
+        ##print 'in main: images_crops:', images_crops
         images, crops,_,_ = zip(*images_crops)
 
         # Printing activations every 10 iterations
@@ -193,24 +186,32 @@ for epoch in range(n_epochs):
             test_images_ori = map(lambda x: load_image(x), test_image_paths)
 
             test_images_crop = map(lambda x: crop_random(x, x=32, y=32), test_images_ori)
-            test_images, test_crops, xs,ys = zip(*test_images_crop)
+            test_images, test_crops, xs, ys = zip(*test_images_crop)
 
             reconstruction_vals, recon_ori_vals, bn1_val,bn2_val,bn3_val,bn4_val,bn5_val,bn6_val,debn4_val, debn3_val, debn2_val, debn1_val, loss_G_val, loss_D_val = sess.run(
                     [reconstruction, reconstruction_ori, bn1,bn2,bn3,bn4,bn5,bn6,debn4, debn3, debn2, debn1, loss_G, loss_D],
                     feed_dict={
                         images_tf: test_images,
-                        images_hiding: test_crops,
+                        images_giving: test_crops,
                         is_train: False
                         })
 
-            # Generate result every 1000 iterations
+            # print 'reconstruction_vals shape:', reconstruction_vals.shape
+
+            # Generate result every 500 iterations
             if iters % 500 == 0:
                 ii = 0
-                for rec_val, img,x,y in zip(reconstruction_vals, test_images, xs, ys):
-                    rec_hid = (255. * (rec_val+1)/2.).astype(int)
+                for rec_val, img, x, y in zip(reconstruction_vals, test_images, xs, ys):
+                    # print 'rec_val type:', type(rec_val)
+                    rec_border = (255. * (rec_val+1)/2.).astype(int)
                     rec_con = (255. * (img+1)/2.).astype(int)
 
-                    rec_con[y:y+64, x:x+64] = rec_hid
+                    # rec_con[y:y+64, x:x+64] = rec_hid
+                    rec_con = rec_con[y:y+64, x:x+64]
+                    rec_con[:7, :57] = rec_border[:7, :57]
+                    rec_con[:57, 57:] = rec_border[:57, 57:]
+                    rec_con[57:, 7:] = rec_border[57:, 7:]
+                    rec_con[7:, :7] = rec_border[7:, :7]
                     cv2.imwrite( os.path.join(result_path, 'img_'+str(ii)+'.'+str(int(iters/100))+'.jpg'), rec_con)
                     ii += 1
                     if ii > 50: break
@@ -219,7 +220,11 @@ for epoch in range(n_epochs):
                     ii = 0
                     for test_image in test_images_ori:
                         test_image = (255. * (test_image+1)/2.).astype(int)
-                        test_image[32:32+64,32:32+64] = 0
+                        # test_image[32:32+64,32:32+64] = 0
+                        test_image[:32,:32+64] = 0
+                        test_image[:32+64,32+64:] = 0
+                        test_image[32+64:,32:] = 0
+                        test_image[32:,:32] = 0
                         cv2.imwrite( os.path.join(result_path, 'img_'+str(ii)+'.ori.jpg'), test_image)
                         ii += 1
                         if ii > 50: break
@@ -249,18 +254,17 @@ for epoch in range(n_epochs):
                 [train_op_G, loss_G, adversarial_pos, adversarial_neg, loss_recon, loss_adv_G, reconstruction, reconstruction_ori, bn1,bn2,bn3,bn4,bn5,bn6,debn4, debn3, debn2, debn1],
                 feed_dict={
                     images_tf: images,
-                    images_hiding: crops,
+                    images_giving: crops,
                     learning_rate: learning_rate_val,
                     is_train: True
                     })
-
 
         if iters % 10 == 0:
             _, loss_D_val, adv_pos_val, adv_neg_val = sess.run(
                     [train_op_D, loss_D, adversarial_pos, adversarial_neg],
                     feed_dict={
                         images_tf: images,
-                        images_hiding: crops,
+                        images_giving: crops,
                         learning_rate: learning_rate_val,
                         is_train: True
                             })
