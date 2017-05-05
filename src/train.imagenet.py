@@ -7,9 +7,9 @@ import cv2
 from model import *
 from util import *
 
-n_epochs = 10000
+# n_epochs = 10000
 # n_epochs = 100
-# n_epochs = 10
+n_epochs = 10
 learning_rate_val = 0.0003
 weight_decay_rate =  0.00001
 momentum = 0.9
@@ -181,7 +181,7 @@ for epoch in range(n_epochs):
         images, crops,_,_ = zip(*images_crops)
 
         # Printing activations every 10 iterations
-        if iters % 100 == 0:
+        if iters % 20 == 0:
             test_image_paths = testset[:batch_size]['image_path'].values
             test_images_ori = map(lambda x: load_image(x), test_image_paths)
 
@@ -199,7 +199,7 @@ for epoch in range(n_epochs):
             # print 'reconstruction_vals shape:', reconstruction_vals.shape
 
             # Generate result every 500 iterations
-            if iters % 500 == 0:
+            if iters % 100 == 0:
                 ii = 0
                 for rec_val, img, x, y in zip(reconstruction_vals, test_images, xs, ys):
                     # print 'rec_val type:', type(rec_val)
