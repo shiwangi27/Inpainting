@@ -187,6 +187,8 @@ for epoch in range(n_epochs):
 
             test_images_crop = map(lambda x: crop_random(x, x=32, y=32), test_images_ori)
             test_images, test_crops, xs, ys = zip(*test_images_crop)
+            # test_images are 128x128 (50x50 original, rest placeholder)
+            # test_crops are 64*64 original
 
             reconstruction_vals, recon_ori_vals, bn1_val,bn2_val,bn3_val,bn4_val,bn5_val,bn6_val,debn4_val, debn3_val, debn2_val, debn1_val, loss_G_val, loss_D_val = sess.run(
                     [reconstruction, reconstruction_ori, bn1,bn2,bn3,bn4,bn5,bn6,debn4, debn3, debn2, debn1, loss_G, loss_D],

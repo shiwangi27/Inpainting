@@ -1,0 +1,30 @@
+{% extends "layout.html" %}
+{% block navbar %}
+<ul class="nav navbar-nav navbar-right">
+    <li class=""><a href="#">About</a></li>
+</ul>
+{% endblock %}
+
+{% block main %}
+<p>System is doing outpainting... Please wait...</p>
+{% endblock %}
+
+{% block js %}
+<script>
+    function ajaxCallback(data) {
+        if (data.done) {
+            console.log('yes!');
+            window.location.replace('{{ url_for('show_result', filename=filename) }}');
+        }
+        else {
+            console.log('no!');
+            window.setTimeout(function() {
+                $.getJSON('{{ url_for('get_result') }}', {id: '{{ id }}' }, ajaxCallback);
+            }, 1000);
+        }
+    }
+    $(document).ready(function(){
+        ajaxCallback({done: false});
+    });
+</script>
+{% endblock %}

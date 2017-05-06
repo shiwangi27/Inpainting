@@ -1,0 +1,45 @@
+{% extends "layout.html" %}
+{% block navbar %}
+
+<ul class="nav navbar-nav navbar-right">
+    <li class=""><a href="#">About</a></li>
+</ul>
+{% endblock %}
+
+{% block main %}
+    <h1>Welcome to Outpainting with Context Encoder demo</h1>
+    <h6>by Shiwangi Singh and Shi Yin</h6>
+    <div>
+    <p>Upload your favorite picture and see it gets outpainted!</p>
+    <p>Github Repo: <a href="https://github.com/shiwangi27/Inpainting">https://github.com/shiwangi27/Inpainting</a></p>
+
+    <form method=post enctype=multipart/form-data>
+    <!--     <div class="row"><div class="col-md-12">
+            <label for="selectStyle">Select a Style</label>
+            <div class="radio">
+                {% for img in styles %}
+                <div class="col-md-2">
+                    <label>
+                        <input type="radio" name="style" value={{ img }}>
+                        <img src=" {{ url_for('static', filename='style/'+img) }} " width="150px" />{{ img.split('.')[0] }}
+                    </label>
+                </div>
+                {% endfor %}
+            </div>
+        </div></div> -->
+
+        <div class="row"><div class="col-md-6">
+        <label>Upload your favorite picture:
+            <div><input id="file" type="file" class="file" name="file"></input></div>
+        </label>
+        </div>
+
+        <div class="col-md-6" align="center">
+            <div class="">
+                <br><br>
+                <input type="submit" class="btn btn-primary" value="Start Outpainting"></input>
+            </div>
+        </div></div>
+    </div>
+    </form>
+{% endblock %}

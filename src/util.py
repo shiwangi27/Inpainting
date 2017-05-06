@@ -1,10 +1,10 @@
 import skimage.io
 import skimage.transform
 from PIL import ImageFile
-import os
 import ipdb
-
-import numpy as np
+import cv2
+import numpy as np, os
+import scipy.misc
 
 #def load_image( path, height=128, width=128 ):
 def load_image( path, pre_height=146, pre_width=146, height=128, width=128 ):
@@ -36,7 +36,9 @@ def load_image( path, pre_height=146, pre_width=146, height=128, width=128 ):
     resized_img = resized_img[ rand_y:rand_y+height, rand_x:rand_x+width, : ]
 
     # make the values in range (-1, 1)
+    # returned image is (128x128)
     return (resized_img * 2)-1 #(resized_img - 127.5)/127.5
+
 
 def crop_random(image_ori, width=64,height=64, x=None, y=None, border=7):
     if image_ori is None: return None
@@ -62,4 +64,32 @@ def crop_random(image_ori, width=64,height=64, x=None, y=None, border=7):
     image[random_y + border:, :random_x + border, 1] = 2*104. / 255. - 1.
     image[random_y + border:, :random_x + border, 2] = 2*123. / 255. - 1.
 
+    # crop is 64x64 original
+    # image is 128x128 (50x50 original, rest placeholder)
     return image, crop, random_x, random_y
+
+# following functions are copied from fast_style_transfer's utils.py
+def save_img(path, img):
+    # skimage.io.imsave(path, img) # not working
+    img = np.clip(img, 0, 255).astype(np.uint8)
+    scipy.misc.imsave(path, img)
+    # cv2.imwrite(path, img) # color flipped
+
+def scale_img(style_path, style_scale):
+    scale = float(style_scale)
+    o0, o1, o2 = scipy.misc.imread(style_path, mode='RGB').shape
+    scale = float(style_scale)
+    new_shape = (int(o0 * scale), int(o1 * scale), o2)
+    style_target = _get_img(style_path, img_size=new_shape)
+    return style_target
+
+def exists(p, msg):
+    assert os.path.exists(p), msg
+
+def list_files(in_path):
+    files = []
+    for (dirpath, dirnames, filenames) in os.walk(in_path):
+        files.extend(filenames)
+        break
+
+    return files
