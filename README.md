@@ -11,7 +11,6 @@
 ### Outpainting Results obtained after training 2000 epochs. 
 
 <p align = 'center'>
-<img src = 'static/resultImages/outResults.png' height = '575px'>
 <a href = 'static/resultImages/outResults.png'><img src = 'static/resultImages/outResults.png' width = '575px'></a>
 </p>
 
