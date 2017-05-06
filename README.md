@@ -8,5 +8,9 @@
 * This work is further extension of "Context Encoders: Feature Learning by Inpainting" by [Pathak et. al](http://www.cs.berkeley.edu/~pathak/papers/cvpr16.pdf). 
 * We will be starting with the Tensorflow implementation by [T. Kim](https://github.com/jazzsaxmafia/Inpainting). 
 
+Video Link: https://youtu.be/EvQ1Adle_iE
+
+Demo Link: http://sage2rtt.evl.uic.edu:8181/
+
 ## Paper Summaries 
 * [Summary](https://docs.google.com/document/d/1_Mgj8AkLhQoViIsmhQylNKxNK9b3OeZDRMaLNRsCP3w/edit?usp=sharing) of the original Context Encoders paper. 
