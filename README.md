@@ -31,7 +31,7 @@ Test results obtained where the left image is the input image and the right imag
 
 ### Write-up Link 
 
-
+* [Formal technical report of the project](https://github.com/shiwangi27/Inpainting/blob/master/writeup/final_writeup-Shi-Shiwangi.pdf)
 
 ### Paper Summaries 
 * [Summary](https://docs.google.com/document/d/1_Mgj8AkLhQoViIsmhQylNKxNK9b3OeZDRMaLNRsCP3w/edit?usp=sharing) of the original Context Encoders paper. 
